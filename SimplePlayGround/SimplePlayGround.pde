@@ -1,6 +1,6 @@
 /*** //<>//
 Matthew Chun
-Practicing how to make a spring using Fisica (In-Progress)
+Just a simple playground to get a sense of Fisica parameters and properties
 Made on original Haply (circa Summer 2017)
 Last modified: July 25, 2018
 ***/
@@ -74,16 +74,16 @@ void setup() { //one time setup for initial parameters
   avatarHaptics = new HVirtualCoupling((1)); //constructor takes a "size" in float (size of circle in docs...) for reference?  
   avatarHaptics.h_avatar.setDensity(1.0); //referencing HVirtualCoupling object's (avatarHaptics) properity of density (total mass of body based on given float ...) might have to play in future
   //avatarHaptics.h_avatar.setFill(255,0,0); //sets color of avatar .... despite using a pre-loaded image, you can comment this out if you want, otherwise it is a white circle shown
-  avatarHaptics.init(world, edgeTopLeftX+worldWidth/2, edgeTopLeftY+4); //initialize position of avatar in rough centre of window screen, the plus 4 is in cm, measured and yes it is 4 cm below window border
+  avatarHaptics.init(world, edgeTopLeftX+worldWidth/2, edgeTopLeftY+2); //initialize position of avatar in rough centre of window screen, the plus 2 is in cm, measured and yes it is 2 cm below window border
   avatarGraphics = loadImage("../img/Haply_avatar.png"); //replace avatar look with another image 
   avatarGraphics.resize((int)(hAPI_Fisica.worldToScreen(1)), (int)(hAPI_Fisica.worldToScreen(1))); //resize image to fit based on screen settings, based on scale factor I guess ... also if it's too big, Haply handle goes crazy for some reason
   avatarHaptics.h_avatar.attachImage(avatarGraphics); //do the replacement of the avatar look
   
   
   //trying to fix bottom left, shake -> vibration bug
-  //println("Default damping setting: " + avatarHaptics.getVirtualCouplingDamping()); //700 by default? In dyne seconds per meter ...
+  println("Default damping setting: " + avatarHaptics.getVirtualCouplingDamping()); //700 by default? In dyne seconds per meter ...
   avatarHaptics.setVirtualCouplingDamping(3000.0);
-  //println("New damping setting: " + avatarHaptics.getVirtualCouplingDamping());
+  println("New damping setting: " + avatarHaptics.getVirtualCouplingDamping());
   
   //set world parameters like boundaries, basic physics
   world.setGravity((0.0), (200.0)); //1000 cm/(s^2), parameters are horizontial and vertical component of gravity ... 0,0 means no gravity, maybe directional gravitational forces??? 1000cm is more or less "normal" earth gravity falling?
@@ -93,25 +93,16 @@ void setup() { //one time setup for initial parameters
   
   //other test virtual object initialization
   FCircle testCircleA = new FCircle(1.5); 
+  
   //testCircleA.setPosition((1462/2), (914/2)); //set this circle in the "centre" of screen window (half point of width, height res) but also causes "jerky" movement due to object being off screen?
-  testCircleA.setPosition(8, 3); //actually works to be "centre", so setPosition is based on CM not pixel positions, if you mess up and it "falls" out of world edges, then jerky
+  testCircleA.setPosition(8, 5); //actually works to be "centre", so setPosition is based on CM not pixel positions, if you mess up and it "falls" out of world edges, then jerky
   testCircleA.setDensity(2); //or value of 0 is also "static" 
   testCircleA.setStatic(true); //static body means no physics on this object? Means it won't move, but you can still feel the edge of it
   testCircleA.setFill(255,0,0); //rgb values for red
   world.add(testCircleA); //add this red circle to the world, but it does not remain fixed in position, will "fall" to the bottom boundary
   
-  //adding second virtual object for the "wrecking ball" for test Circle A (testing FDistanceJoint)
-  FCircle testCircleB = new FCircle(1.5);
-  testCircleB.setPosition(8,7);
-  testCircleB.setDensity(2);
-  //testCircleB.setStatic(true);
-  testCircleB.setFill(0,0,255); //blue in rgb
-  world.add(testCircleB);
   
-  //FDistanceJoint testing - IN-PROGRESS
-  FDistanceJoint joint = new FDistanceJoint(testCircleB,testCircleA); //sets up a joint between these virtual objects, auto sets anchor of joints to centre of bodies
-  joint.setLength(4); //set defined distance in theory btw joint bodies
-  world.add(joint);
+  
   
   //start graphics and haptics sim loops
   world.draw(); //render the world and initialized objects defined above on the screen
@@ -141,7 +132,7 @@ void draw() {
 
 void onTickEvent(CountdownTimer t, long timeLeftUntilFinish){
   
-  rendering_force = true; //initiate haptics (flag) in theory
+  rendering_force = true; //initiate haptics (flag)
   
   //if there happens to be new information to play with
   if (haply_board.data_available()) {
