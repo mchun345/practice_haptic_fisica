@@ -40,6 +40,7 @@ PVector           f_ee                      = new PVector(0, 0);
 /* Graphic objects */
 //float pixelsPerCentimeter= 40.0; //this is the resolution of my screen divided by the number of centimeters  i.e. a 1600px x 800px display with a 40 cm screen -> 40 pixels/cm
 float pixelsPerCentimeter= 68.5; //"zoom level" of screen window
+
 FWorld world; 
 FBox b; 
 FPoly p; 
@@ -66,6 +67,7 @@ void setup() {
   //affects windows size of the window where app will run
   //size(640, 400); // (worldWidth*pixelsPerCentimeter, worldHeight*pixelsPerCentimeter) must input as number, with 1096 by 685 being a sweet spot so far besides 640,400
   size(1096, 685); //critical, depending on how above formula is calculated, "unreachable" screen ratios for Haply seems to cause jerkiness even when not moving handle. So far, screen res ratio of 1.6 seems to work, but still MUST be reacble to avoid jerkiness it seems ... 
+    //size(1370, 1028);
 
   /* BOARD */
   haply_board = new Board(this, Serial.list()[0], 0); 

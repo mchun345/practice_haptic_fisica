@@ -1,8 +1,9 @@
 /*** //<>//
 Matthew Chun
 Practicing how to make a spring using Fisica (In-Progress)
+Current status: Made a simple "spring" system, more like a wrecking ball though, have to add "grabbing" to see how it feels like
 Made on original Haply (circa Summer 2017)
-Last modified: July 25, 2018
+Last modified: July 26, 2018
 ***/
 
 
@@ -82,7 +83,7 @@ void setup() { //one time setup for initial parameters
   
   //trying to fix bottom left, shake -> vibration bug
   //println("Default damping setting: " + avatarHaptics.getVirtualCouplingDamping()); //700 by default? In dyne seconds per meter ...
-  avatarHaptics.setVirtualCouplingDamping(3000.0);
+  avatarHaptics.setVirtualCouplingDamping(3000.0); //to help prevent that "jerky" bug
   //println("New damping setting: " + avatarHaptics.getVirtualCouplingDamping());
   
   //set world parameters like boundaries, basic physics
@@ -92,26 +93,47 @@ void setup() { //one time setup for initial parameters
   world.setEdgesFriction(3.5); //edge friction as stated, but to be honest, hard to distinguish even "higher values" like 5.5 and example value of 0.5, sometimes if you "really grind" then maybe
   
   //other test virtual object initialization
-  FCircle testCircleA = new FCircle(1.5); 
+  FCircle testCircleA = new FCircle(1.5); //sets diameter in real world cm
   //testCircleA.setPosition((1462/2), (914/2)); //set this circle in the "centre" of screen window (half point of width, height res) but also causes "jerky" movement due to object being off screen?
-  testCircleA.setPosition(8, 3); //actually works to be "centre", so setPosition is based on CM not pixel positions, if you mess up and it "falls" out of world edges, then jerky
-  testCircleA.setDensity(2); //or value of 0 is also "static" 
-  testCircleA.setStatic(true); //static body means no physics on this object? Means it won't move, but you can still feel the edge of it
+  testCircleA.setPosition(8, 2); //is based on CM not pixel positions, if you mess up and it "falls" out of world edges, then movement can be jerky
+  testCircleA.setDensity(2); //or value of 0 is also "static", for mass
+  testCircleA.setStatic(true); //static body means no physics on this object? Means it won't move, but you can still feel the edge of it, this is our "hanging point" so it should be static
   testCircleA.setFill(255,0,0); //rgb values for red
-  world.add(testCircleA); //add this red circle to the world, but it does not remain fixed in position, will "fall" to the bottom boundary
+  //testCircleA.setDrawable(false); //actually still renders haptically, but no longer visible ... just invisible
+  world.add(testCircleA); //add this red circle to the world
+  
+  //seems like you need "steps" in btw joints to make it more spring like, let's test that idea out
+  //one "middle" guy graphic
+  FCircle midCircle = new FCircle(1.5); //sets diameter in real world cm
+  midCircle.setDensity(2); //or value of 0 is also "static", for mass
+  midCircle.setPosition(8,5); //pretty much halfway on the window screen, but in the "middle" btw the red and blue circles
+  midCircle.setFill(0,255,0); //green in rgb
+  world.add(midCircle); //add this green circle to the world
   
   //adding second virtual object for the "wrecking ball" for test Circle A (testing FDistanceJoint)
-  FCircle testCircleB = new FCircle(1.5);
-  testCircleB.setPosition(8,7);
-  testCircleB.setDensity(2);
-  //testCircleB.setStatic(true);
+  FCircle testCircleB = new FCircle(1.5); //sets diameter in real world cm
+  testCircleB.setPosition(8,7); //is based on CM not pixel positions, if you mess up and it "falls" out of world edges, then movement can be jerky
+  testCircleB.setDensity(8); //or value of 0 is also "static", for mass
+  //testCircleB.setStatic(true); //was testing to see if this "hanging" blue ball could still move around, or prevent "snapping" when adding a joint to it
   testCircleB.setFill(0,0,255); //blue in rgb
-  world.add(testCircleB);
+  world.add(testCircleB); //add this blue circle to the world
   
   //FDistanceJoint testing - IN-PROGRESS
-  FDistanceJoint joint = new FDistanceJoint(testCircleB,testCircleA); //sets up a joint between these virtual objects, auto sets anchor of joints to centre of bodies
-  joint.setLength(4); //set defined distance in theory btw joint bodies
-  world.add(joint);
+  FDistanceJoint jointAtoMid = new FDistanceJoint(testCircleA, midCircle); //sets up a joint between these virtual objects, auto sets anchor of joints to centre of bodies
+  jointAtoMid.setFrequency(10); //controls "bounce", 100 was the default but was way too much -> might be diff when using more than one joint
+  jointAtoMid.setDamping(2); //"slow down" rate
+  //println("Starting Anchor 1 Coordinates: " + jointAtoMid.getAnchor1X() + "," + jointAtoMid.getAnchor1Y());
+  //println("Starting Anchor 2 Coordinates: " + jointAtoMid.getAnchor2X() + "," + jointAtoMid.getAnchor2Y());
+  //jointAtoMid.setLength(4); //set defined distance in theory btw joint bodies
+  jointAtoMid.calculateLength(); //sets the current distance btw joints, for "spring stretch" perhaps?
+  world.add(jointAtoMid); //add this first joint to the world
+  
+  FDistanceJoint jointMidtoB = new FDistanceJoint (midCircle, testCircleB); //sets up a joint between these virtual objects, auto sets anchor of joints to centre of bodies
+  jointMidtoB.setFrequency(10); //controls "bounce", 100 was the default but was way too much -> might be diff when using more than one joint
+  jointMidtoB.setDamping(2); //"slow down" rate
+  jointMidtoB.calculateLength(); //sets the current distance btw joints, for "spring stretch" perhaps?
+  //jointMidtoB.setLength(4); //set defined distance in theory btw joint bodies, but doesn't seem to work since joints tend to "snap" towards each other
+  world.add(jointMidtoB); //add this second joint to the world
   
   //start graphics and haptics sim loops
   world.draw(); //render the world and initialized objects defined above on the screen

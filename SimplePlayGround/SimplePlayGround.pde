@@ -82,7 +82,7 @@ void setup() { //one time setup for initial parameters
   
   //trying to fix bottom left, shake -> vibration bug
   println("Default damping setting: " + avatarHaptics.getVirtualCouplingDamping()); //700 by default? In dyne seconds per meter ...
-  avatarHaptics.setVirtualCouplingDamping(3000.0);
+  //avatarHaptics.setVirtualCouplingDamping(3000.0);
   println("New damping setting: " + avatarHaptics.getVirtualCouplingDamping());
   
   //set world parameters like boundaries, basic physics
