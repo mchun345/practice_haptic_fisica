@@ -1,7 +1,7 @@
 /*** //<>//
 Matthew Chun
 Practicing how to make a spring using Fisica (In-Progress)
-Current status: Made a simple "spring" system, more like a wrecking ball though, have to add "grabbing" to see how it feels like
+Current status: Instant anchoring to "spring", feels like a "weak" spring system compared to "Hello Wall" example, still have to detect grab and choose when to anchor
 Made on original Haply (circa Summer 2017)
 Last modified: July 26, 2018
 ***/
@@ -55,10 +55,15 @@ float edgeBottomRightY = worldHeight;
 HVirtualCoupling avatarHaptics;
 PImage avatarGraphics; 
 
+//reference to testCircleB for "collision detection" 
+FCircle testCircleB; 
+//joint in case of collision
+FDistanceJoint jointAttach;
+
 void setup() { //one time setup for initial parameters
   
   size(1462, 914); // (worldWidth*pixelsPerCentimeter, worldHeight*pixelsPerCentimeter) must input as number
-  frameRate(120); //60 and above for smooth performance in theory
+  frameRate(60); //60 and above for smooth performance in theory
 
   /* BOARD */
   haply_board = new Board(this, Serial.list()[0], 0); 
@@ -74,13 +79,12 @@ void setup() { //one time setup for initial parameters
   //avatar code to play around with
   avatarHaptics = new HVirtualCoupling((1)); //constructor takes a "size" in float (size of circle in docs...) for reference?  
   avatarHaptics.h_avatar.setDensity(1.0); //referencing HVirtualCoupling object's (avatarHaptics) properity of density (total mass of body based on given float ...) might have to play in future
-  //avatarHaptics.h_avatar.setFill(255,0,0); //sets color of avatar .... despite using a pre-loaded image, you can comment this out if you want, otherwise it is a white circle shown
+  avatarHaptics.h_avatar.setFill(255,0,0); //sets color of avatar .... despite using a pre-loaded image, you can comment this out if you want, otherwise it is a white circle shown
   avatarHaptics.init(world, edgeTopLeftX+worldWidth/2, edgeTopLeftY+4); //initialize position of avatar in rough centre of window screen, the plus 4 is in cm, measured and yes it is 4 cm below window border
   avatarGraphics = loadImage("../img/Haply_avatar.png"); //replace avatar look with another image 
   avatarGraphics.resize((int)(hAPI_Fisica.worldToScreen(1)), (int)(hAPI_Fisica.worldToScreen(1))); //resize image to fit based on screen settings, based on scale factor I guess ... also if it's too big, Haply handle goes crazy for some reason
   avatarHaptics.h_avatar.attachImage(avatarGraphics); //do the replacement of the avatar look
-  
-  
+ 
   //trying to fix bottom left, shake -> vibration bug
   //println("Default damping setting: " + avatarHaptics.getVirtualCouplingDamping()); //700 by default? In dyne seconds per meter ...
   avatarHaptics.setVirtualCouplingDamping(3000.0); //to help prevent that "jerky" bug
@@ -96,7 +100,7 @@ void setup() { //one time setup for initial parameters
   FCircle testCircleA = new FCircle(1.5); //sets diameter in real world cm
   //testCircleA.setPosition((1462/2), (914/2)); //set this circle in the "centre" of screen window (half point of width, height res) but also causes "jerky" movement due to object being off screen?
   testCircleA.setPosition(8, 2); //is based on CM not pixel positions, if you mess up and it "falls" out of world edges, then movement can be jerky
-  testCircleA.setDensity(2); //or value of 0 is also "static", for mass
+  testCircleA.setDensity(3); //or value of 0 is also "static", for mass
   testCircleA.setStatic(true); //static body means no physics on this object? Means it won't move, but you can still feel the edge of it, this is our "hanging point" so it should be static
   testCircleA.setFill(255,0,0); //rgb values for red
   //testCircleA.setDrawable(false); //actually still renders haptically, but no longer visible ... just invisible
@@ -105,15 +109,15 @@ void setup() { //one time setup for initial parameters
   //seems like you need "steps" in btw joints to make it more spring like, let's test that idea out
   //one "middle" guy graphic
   FCircle midCircle = new FCircle(1.5); //sets diameter in real world cm
-  midCircle.setDensity(2); //or value of 0 is also "static", for mass
+  midCircle.setDensity(3); //or value of 0 is also "static", for mass
   midCircle.setPosition(8,5); //pretty much halfway on the window screen, but in the "middle" btw the red and blue circles
   midCircle.setFill(0,255,0); //green in rgb
   world.add(midCircle); //add this green circle to the world
   
   //adding second virtual object for the "wrecking ball" for test Circle A (testing FDistanceJoint)
-  FCircle testCircleB = new FCircle(1.5); //sets diameter in real world cm
+  testCircleB = new FCircle(1.5); //sets diameter in real world cm
   testCircleB.setPosition(8,7); //is based on CM not pixel positions, if you mess up and it "falls" out of world edges, then movement can be jerky
-  testCircleB.setDensity(8); //or value of 0 is also "static", for mass
+  testCircleB.setDensity(3); //or value of 0 is also "static", for mass
   //testCircleB.setStatic(true); //was testing to see if this "hanging" blue ball could still move around, or prevent "snapping" when adding a joint to it
   testCircleB.setFill(0,0,255); //blue in rgb
   world.add(testCircleB); //add this blue circle to the world
@@ -135,6 +139,16 @@ void setup() { //one time setup for initial parameters
   //jointMidtoB.setLength(4); //set defined distance in theory btw joint bodies, but doesn't seem to work since joints tend to "snap" towards each other
   world.add(jointMidtoB); //add this second joint to the world
   
+  //for the case, avatar is touching testCircleB
+  //since avatar is FCircle, can we just "attach" it to the testCircle right now? Maybe it has to be a joint
+  //the below works, but don't we want to make the avatar "grab-free"? 
+   jointAttach = new FDistanceJoint(testCircleB, avatarHaptics.h_avatar);
+   jointAttach.setFrequency(10);
+   jointAttach.setDamping(2);
+   jointAttach.calculateLength(); //might be problematic since only happens once (for freeform grabbing)
+   //jointAttach.setLength(1); //testing to see if we can "limit" the stretch of avatar to "spring system"
+   world.add(jointAttach); 
+  
   //start graphics and haptics sim loops
   world.draw(); //render the world and initialized objects defined above on the screen
   haptic_timer = CountdownTimerService.getNewCountdownTimer(this).configure(SIMULATION_PERIOD, HOUR_IN_MILLIS).start(); //start the haptic simulation loop
@@ -145,6 +159,17 @@ void setup() { //one time setup for initial parameters
 void draw() {
   background(255); //used to "flush" past graphics on update, otherwise you get "inception" effect!
   
+  //check if h_avatar (avatar) is touching another body
+  /*if(avatarHaptics.h_avatar.isTouchingBody(testCircleB)){
+    println("Avatar is currently touching the blue circle");
+    //avatarHaptics.h_avatar.dettachImage(); 
+    world.add(jointAttach); 
+  }else{ //once you touch, this won't be true, but it did work for a bit, felt like a spring of sorts, eventually crashes app
+    println("Avatar is NOT currently touching the blue circle");
+    world.remove(jointAttach);
+  }*/
+  
+  
   //debugging vibration bug
   //println("Current damping setting: " + avatarHaptics.getVirtualCouplingDamping());
    
@@ -153,6 +178,10 @@ void draw() {
     //s.drawContactVectors(this); 
     
    }
+   
+   //might have to move this to another loop, but trying to detect if touching another body
+   
+   
     world.draw(); //update the world graphics on the screen
   
 }
