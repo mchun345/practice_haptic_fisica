@@ -1,9 +1,9 @@
 /*** //<>//
 Matthew Chun
 Practicing how to make a spring using Fisica (In-Progress)
-Current status: Made a simple "spring" system, more like a wrecking ball though, have to add "grabbing" to see how it feels like
+Current status: A quick example added for how an avatar already anchored to the simple spring would feel like, still have to add "grab" and fine tune settings (frequency jerkiness on contact)
 Made on original Haply (circa Summer 2017)
-Last modified: July 26, 2018
+Last modified: July 27, 2018
 ***/
 
 
@@ -58,7 +58,7 @@ PImage avatarGraphics;
 void setup() { //one time setup for initial parameters
   
   size(1462, 914); // (worldWidth*pixelsPerCentimeter, worldHeight*pixelsPerCentimeter) must input as number
-  frameRate(120); //60 and above for smooth performance in theory
+  frameRate(60); //60 and above for smooth performance in theory
 
   /* BOARD */
   haply_board = new Board(this, Serial.list()[0], 0); 
@@ -83,7 +83,7 @@ void setup() { //one time setup for initial parameters
   
   //trying to fix bottom left, shake -> vibration bug
   //println("Default damping setting: " + avatarHaptics.getVirtualCouplingDamping()); //700 by default? In dyne seconds per meter ...
-  avatarHaptics.setVirtualCouplingDamping(3000.0); //to help prevent that "jerky" bug
+  avatarHaptics.setVirtualCouplingDamping(3000.0); //to help prevent that "jerky" bug, might still be present in light of springs, play around with later
   //println("New damping setting: " + avatarHaptics.getVirtualCouplingDamping());
   
   //set world parameters like boundaries, basic physics
@@ -134,6 +134,15 @@ void setup() { //one time setup for initial parameters
   jointMidtoB.calculateLength(); //sets the current distance btw joints, for "spring stretch" perhaps?
   //jointMidtoB.setLength(4); //set defined distance in theory btw joint bodies, but doesn't seem to work since joints tend to "snap" towards each other
   world.add(jointMidtoB); //add this second joint to the world
+  
+  //avatar anchored to spring simple example
+  FDistanceJoint jointBtoAvatar = new FDistanceJoint(testCircleB,avatarHaptics.h_avatar); //make a joint between the blue circle (end of spring) and our avatar
+  jointBtoAvatar.setFrequency(50); //or maybe this value to prevent jerkiness, but more about "weight"
+  jointBtoAvatar.setDamping(8); //play around here to try to prevent jerky on contact with blue circle, higher seems safer, "rate of return"
+  jointBtoAvatar.calculateLength(); //sets the current distance btw joints, for "spring stretch" perhaps?
+  //jointBtoAvatar.setLength(6);
+  world.add(jointBtoAvatar); //add this joint btw the avatar and the blue circle to the world
+  
   
   //start graphics and haptics sim loops
   world.draw(); //render the world and initialized objects defined above on the screen
