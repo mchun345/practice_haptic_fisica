@@ -1,7 +1,7 @@
 /*** //<>//
 Matthew Chun
 Practicing how to make a spring using Fisica (In-Progress)
-Current status: A quick example added for how an avatar already anchored to the simple spring would feel like, still have to add "grab" and fine tune settings (frequency jerkiness on contact)
+Current status: Button toggling to allow for avatar anchoring on/off to the spring. 
 Made on original Haply (circa Summer 2017)
 Last modified: July 27, 2018
 ***/
@@ -54,6 +54,11 @@ float edgeBottomRightY = worldHeight;
 //avatar parameters (haptics, graphics)
 HVirtualCoupling avatarHaptics;
 PImage avatarGraphics; 
+
+//joint that can be toggled
+FDistanceJoint jointBtoAvatar;
+//for button toggling of avatar anchoring to the spring
+boolean grabMode; 
 
 void setup() { //one time setup for initial parameters
   
@@ -136,12 +141,15 @@ void setup() { //one time setup for initial parameters
   world.add(jointMidtoB); //add this second joint to the world
   
   //avatar anchored to spring simple example
-  FDistanceJoint jointBtoAvatar = new FDistanceJoint(testCircleB,avatarHaptics.h_avatar); //make a joint between the blue circle (end of spring) and our avatar
+  jointBtoAvatar = new FDistanceJoint(testCircleB,avatarHaptics.h_avatar); //make a joint between the blue circle (end of spring) and our avatar
   jointBtoAvatar.setFrequency(50); //or maybe this value to prevent jerkiness, but more about "weight"
   jointBtoAvatar.setDamping(8); //play around here to try to prevent jerky on contact with blue circle, higher seems safer, "rate of return"
   jointBtoAvatar.calculateLength(); //sets the current distance btw joints, for "spring stretch" perhaps?
   //jointBtoAvatar.setLength(6);
-  world.add(jointBtoAvatar); //add this joint btw the avatar and the blue circle to the world
+  //world.add(jointBtoAvatar); //add this joint btw the avatar and the blue circle to the world
+  
+  //for button toggling
+  grabMode = false;
   
   
   //start graphics and haptics sim loops
@@ -164,6 +172,22 @@ void draw() {
    }
     world.draw(); //update the world graphics on the screen
   
+}
+
+//button toggling to allow for avatar anchoring on/off to spring
+void keyPressed(){
+  if(key == 'g' || key == 'G'){
+    if(grabMode == false){
+      grabMode = true;
+      world.add(jointBtoAvatar);
+      println("Grab mode curently ON");
+    
+    }else{
+      grabMode = false;
+      world.remove(jointBtoAvatar);
+      println("Grab mode curently OFF");
+    }
+  }
 }
 
 /**********************************************************************************************************************
