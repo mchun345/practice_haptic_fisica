@@ -1,7 +1,7 @@
 /*** //<>//
 Matthew Chun
 Practicing how to make a spring using Fisica (In-Progress)
-Current status: Have to be touching the blue circle and press the 'g' button to anchor to the spring.
+Current status: Adding spring graphic that deforms accordingly.
 Made on original Haply (circa Summer 2017)
 Last modified: July 27, 2018
 ***/
@@ -55,12 +55,29 @@ float edgeBottomRightY = worldHeight;
 HVirtualCoupling avatarHaptics;
 PImage avatarGraphics; 
 
+//circle graphics
+FCircle testCircleA;
+
 //joint that can be toggled
 FDistanceJoint jointBtoAvatar;
 //for button toggling of avatar anchoring to the spring
 boolean grabMode; 
 boolean isTouching; //to check if avatar is touching the blue circle for potential "grabbing"
 FCircle testCircleB; //target "grabbable" blue circle (end of spring)
+
+//spring graphic parameters
+PImage spring; 
+float springLength; 
+float springWidth; 
+float springLengthWorld;
+float springWidthWorld; 
+float circleAParamX;
+float circleAParamY;
+float circleBParamX;
+float circleBParamY;
+FBox springHolder;
+
+
 
 void setup() { //one time setup for initial parameters
   
@@ -100,7 +117,7 @@ void setup() { //one time setup for initial parameters
   world.setEdgesFriction(3.5); //edge friction as stated, but to be honest, hard to distinguish even "higher values" like 5.5 and example value of 0.5, sometimes if you "really grind" then maybe
   
   //other test virtual object initialization
-  FCircle testCircleA = new FCircle(1.5); //sets diameter in real world cm
+  testCircleA = new FCircle(1.5); //sets diameter in real world cm
   //testCircleA.setPosition((1462/2), (914/2)); //set this circle in the "centre" of screen window (half point of width, height res) but also causes "jerky" movement due to object being off screen?
   testCircleA.setPosition(8, 2); //is based on CM not pixel positions, if you mess up and it "falls" out of world edges, then movement can be jerky
   testCircleA.setDensity(2); //or value of 0 is also "static", for mass
@@ -115,6 +132,7 @@ void setup() { //one time setup for initial parameters
   midCircle.setDensity(2); //or value of 0 is also "static", for mass
   midCircle.setPosition(8,5); //pretty much halfway on the window screen, but in the "middle" btw the red and blue circles
   midCircle.setFill(0,255,0); //green in rgb
+  //midCircle.setDrawable(false);
   world.add(midCircle); //add this green circle to the world
   
   //adding second virtual object for the "wrecking ball" for test Circle A (testing FDistanceJoint)
@@ -123,6 +141,7 @@ void setup() { //one time setup for initial parameters
   testCircleB.setDensity(8); //or value of 0 is also "static", for mass
   //testCircleB.setStatic(true); //was testing to see if this "hanging" blue ball could still move around, or prevent "snapping" when adding a joint to it
   testCircleB.setFill(0,0,255); //blue in rgb
+  //testCircleB.setDrawable(false);
   world.add(testCircleB); //add this blue circle to the world
   
   //FDistanceJoint testing - IN-PROGRESS
@@ -155,6 +174,37 @@ void setup() { //one time setup for initial parameters
   //for detecting if avatar is touching blue circle (spring end) at this point
   isTouching = false; 
   
+  //spring "look"
+  spring = loadImage("../img/spring.png");
+  //you need the "distance" that the spring should be to "cover" the joint circle objects we have, eg. from testCircleA (start) to testCircleB
+  //FDistanceJoint distJoint = new FDistanceJoint (testCircleA, testCircleB);
+  circleAParamY = testCircleA.getY();
+  circleAParamY = testCircleA.getY();
+  circleBParamX = testCircleB.getX();
+  circleBParamY = testCircleB.getY();
+  springLength = circleBParamY - circleAParamY;
+  springWidth =  1.5; //size of circle 
+  springLengthWorld = hAPI_Fisica.worldToScreen(springLength); 
+  springWidthWorld = hAPI_Fisica.worldToScreen(springWidth); 
+  spring.resize((int)springWidthWorld, (int)springLengthWorld); //resize is in pixels NOT cm
+   
+  springHolder = new FBox(springWidth,springLength);
+  springHolder.setPosition(8,4);
+  springHolder.setFill(0,0,255);
+  //springHolder.setStatic(true); //eventually have to toggle off I think, or has to be "off"
+  springHolder.attachImage(spring);
+  springHolder.setDrawable(true);
+  world.add(springHolder);
+  
+  /*float circleAParamX = testCircleA.getX(); 
+  float circleAParamY = testCircleA.getY();
+  println("Circle A coordinates: " + circleAParamX + " , " + circleAParamY);
+  float circleBParamX = testCircleB.getX();
+  float circleBParamY = testCircleB.getY();
+  println("Circle B coordinates: " + circleBParamX + " , " + circleBParamY);*/
+  
+
+  
   //start graphics and haptics sim loops
   world.draw(); //render the world and initialized objects defined above on the screen
   haptic_timer = CountdownTimerService.getNewCountdownTimer(this).configure(SIMULATION_PERIOD, HOUR_IN_MILLIS).start(); //start the haptic simulation loop
@@ -167,10 +217,30 @@ void draw() {
   
   //get current status of whether avatar and blue circle (end of spring) are "touching" or not
   isTouching = avatarHaptics.h_avatar.isTouchingBody(testCircleB);
-  println("Is avatar touching blue circle?: " + isTouching);
+  //println("Is avatar touching blue circle?: " + isTouching);
   //println(frameRate); //show current framerate, but for some reason, seems to prevent keypress detection? 
   //debugging vibration bug
   //println("Current damping setting: " + avatarHaptics.getVirtualCouplingDamping());
+  
+  
+  /*float circleAParamX = testCircleA.getX(); 
+  float circleAParamY = testCircleA.getY();
+  println("Circle A coordinates: " + circleAParamX + " , " + circleAParamY);
+  float circleBParamX = testCircleB.getX();
+  float circleBParamY = testCircleB.getY();
+  println("Circle B coordinates: " + circleBParamX + " , " + circleBParamY);
+  float springLength = circleBParamY - circleAParamY; 
+  println("springLength is currently: " + springLength);*/
+  
+  //try "deforming" spring graphic here
+  circleBParamY = testCircleB.getY();
+  circleAParamY = testCircleA.getY();
+  springLength = circleBParamY - circleAParamY;
+  springLengthWorld = hAPI_Fisica.worldToScreen(springLength); 
+  springWidthWorld = hAPI_Fisica.worldToScreen(springWidth); 
+   springHolder.setDrawable(true);
+  spring.resize((int)springWidthWorld, (int)springLengthWorld); //resize is in pixels NOT cm
+  
    
   if(!rendering_force){ //why would we need this? Seems safe without it
     
@@ -183,7 +253,7 @@ void draw() {
 
 //button toggling to allow for avatar anchoring on/off to spring
 void keyPressed(){
-  if(key == 'g' || key == 'G'){
+  if(key == 'g' || key == 'G'){ 
     if(grabMode == false){
       if(isTouching == true){
         println("Grab mode curently ON");
