@@ -1,7 +1,7 @@
 /*** //<>//
 Matthew Chun
 Practicing how to make a spring using Fisica (In-Progress)
-Current status: Button toggling to allow for avatar anchoring on/off to the spring. 
+Current status: Have to be touching the blue circle and press the 'g' button to anchor to the spring.
 Made on original Haply (circa Summer 2017)
 Last modified: July 27, 2018
 ***/
@@ -59,6 +59,8 @@ PImage avatarGraphics;
 FDistanceJoint jointBtoAvatar;
 //for button toggling of avatar anchoring to the spring
 boolean grabMode; 
+boolean isTouching; //to check if avatar is touching the blue circle for potential "grabbing"
+FCircle testCircleB; //target "grabbable" blue circle (end of spring)
 
 void setup() { //one time setup for initial parameters
   
@@ -116,7 +118,7 @@ void setup() { //one time setup for initial parameters
   world.add(midCircle); //add this green circle to the world
   
   //adding second virtual object for the "wrecking ball" for test Circle A (testing FDistanceJoint)
-  FCircle testCircleB = new FCircle(1.5); //sets diameter in real world cm
+  testCircleB = new FCircle(1.5); //sets diameter in real world cm
   testCircleB.setPosition(8,7); //is based on CM not pixel positions, if you mess up and it "falls" out of world edges, then movement can be jerky
   testCircleB.setDensity(8); //or value of 0 is also "static", for mass
   //testCircleB.setStatic(true); //was testing to see if this "hanging" blue ball could still move around, or prevent "snapping" when adding a joint to it
@@ -142,7 +144,7 @@ void setup() { //one time setup for initial parameters
   
   //avatar anchored to spring simple example
   jointBtoAvatar = new FDistanceJoint(testCircleB,avatarHaptics.h_avatar); //make a joint between the blue circle (end of spring) and our avatar
-  jointBtoAvatar.setFrequency(50); //or maybe this value to prevent jerkiness, but more about "weight"
+  jointBtoAvatar.setFrequency(7); //or maybe this value to prevent jerkiness, but more about "weight"
   jointBtoAvatar.setDamping(8); //play around here to try to prevent jerky on contact with blue circle, higher seems safer, "rate of return"
   jointBtoAvatar.calculateLength(); //sets the current distance btw joints, for "spring stretch" perhaps?
   //jointBtoAvatar.setLength(6);
@@ -150,7 +152,8 @@ void setup() { //one time setup for initial parameters
   
   //for button toggling
   grabMode = false;
-  
+  //for detecting if avatar is touching blue circle (spring end) at this point
+  isTouching = false; 
   
   //start graphics and haptics sim loops
   world.draw(); //render the world and initialized objects defined above on the screen
@@ -162,6 +165,10 @@ void setup() { //one time setup for initial parameters
 void draw() {
   background(255); //used to "flush" past graphics on update, otherwise you get "inception" effect!
   
+  //get current status of whether avatar and blue circle (end of spring) are "touching" or not
+  isTouching = avatarHaptics.h_avatar.isTouchingBody(testCircleB);
+  println("Is avatar touching blue circle?: " + isTouching);
+  //println(frameRate); //show current framerate, but for some reason, seems to prevent keypress detection? 
   //debugging vibration bug
   //println("Current damping setting: " + avatarHaptics.getVirtualCouplingDamping());
    
@@ -178,14 +185,16 @@ void draw() {
 void keyPressed(){
   if(key == 'g' || key == 'G'){
     if(grabMode == false){
+      if(isTouching == true){
+        println("Grab mode curently ON");
+        world.add(jointBtoAvatar);
+      }
       grabMode = true;
-      world.add(jointBtoAvatar);
-      println("Grab mode curently ON");
     
     }else{
-      grabMode = false;
       world.remove(jointBtoAvatar);
       println("Grab mode curently OFF");
+      grabMode = false;
     }
   }
 }
