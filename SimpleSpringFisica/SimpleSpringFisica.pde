@@ -186,15 +186,18 @@ void setup() { //one time setup for initial parameters
   springWidth =  1.5; //size of circle 
   springLengthWorld = hAPI_Fisica.worldToScreen(springLength); 
   springWidthWorld = hAPI_Fisica.worldToScreen(springWidth); 
-  spring.resize((int)springWidthWorld, (int)springLengthWorld); //resize is in pixels NOT cm
+  //spring.resize((int)springWidthWorld, (int)springLengthWorld); //resize is in pixels NOT cm
    
-  springHolder = new FBox(springWidth,springLength);
-  springHolder.setPosition(8,4);
-  springHolder.setFill(0,0,255);
+  //springHolder = new FBox(springWidth,springLength);
+  //springHolder.setPosition(12,4);
+  //springHolder.setFill(0,0,255);
   //springHolder.setStatic(true); //eventually have to toggle off I think, or has to be "off"
-  springHolder.attachImage(spring);
-  springHolder.setDrawable(true);
-  world.add(springHolder);
+  //springHolder.setHaptic(false); 
+  //springHolder.setStaticBody(true); //what's the difference with this and setStatic? Doc def is not clear, still causes a freeze
+  //springHolder.attachImage(spring);
+  //springHolder.setDrawable(true);
+  //spring.resize((int)springWidthWorld, (int)springLengthWorld); //resize is in pixels NOT cm*/
+  //world.add(springHolder);
   
   /*float circleAParamX = testCircleA.getX(); 
   float circleAParamY = testCircleA.getY();
@@ -216,8 +219,8 @@ void draw() {
   background(255); //used to "flush" past graphics on update, otherwise you get "inception" effect!
   
   //get current status of whether avatar and blue circle (end of spring) are "touching" or not
-  isTouching = avatarHaptics.h_avatar.isTouchingBody(testCircleB);
-  //println("Is avatar touching blue circle?: " + isTouching);
+  isTouching = avatarHaptics.h_avatar.isTouchingBody(testCircleB); //sometimes throws a concurrent modification exception
+  println("Is avatar touching blue circle?: " + isTouching);
   //println(frameRate); //show current framerate, but for some reason, seems to prevent keypress detection? 
   //debugging vibration bug
   //println("Current damping setting: " + avatarHaptics.getVirtualCouplingDamping());
@@ -238,9 +241,11 @@ void draw() {
   springLength = circleBParamY - circleAParamY;
   springLengthWorld = hAPI_Fisica.worldToScreen(springLength); 
   springWidthWorld = hAPI_Fisica.worldToScreen(springWidth); 
-   springHolder.setDrawable(true);
-  spring.resize((int)springWidthWorld, (int)springLengthWorld); //resize is in pixels NOT cm
-  
+  println("Current springWidth and springLength are: " + (int)springWidth + " , " + (int)springLength);
+  //springHolder.setDrawable(true);
+  //springHolder.attachImage(spring);
+  //spring.resize((int)springWidthWorld, (int)springLengthWorld); //resize is in pixels NOT cm*/ //aparently blurry b/c resize() is cumulative, so will blur after a few iterations of draw loop
+  image(spring, 1097, 100, springWidthWorld, springLengthWorld); //for now, set in x,y pixel coordinates, roughly 3/4 of the window in for now
    
   if(!rendering_force){ //why would we need this? Seems safe without it
     
