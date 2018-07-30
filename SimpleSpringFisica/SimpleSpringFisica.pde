@@ -3,7 +3,7 @@ Matthew Chun
 Practicing how to make a spring using Fisica (In-Progress)
 Current status: Adding spring graphic that deforms accordingly.
 Made on original Haply (circa Summer 2017)
-Last modified: July 27, 2018
+Last modified: July 30, 2018
 ***/
 
 
@@ -58,6 +58,10 @@ PImage avatarGraphics;
 //circle graphics
 FCircle testCircleA;
 
+//box graphics for testing
+FBox testBoxA; 
+FBox testBoxB; 
+
 //joint that can be toggled
 FDistanceJoint jointBtoAvatar;
 //for button toggling of avatar anchoring to the spring
@@ -75,6 +79,11 @@ float circleAParamX;
 float circleAParamY;
 float circleBParamX;
 float circleBParamY;
+float boxAParamX;
+float boxAParamY;
+float boxBParamX;
+float boxBParamY;
+float hapticAvatarY;
 FBox springHolder;
 
 
@@ -117,57 +126,99 @@ void setup() { //one time setup for initial parameters
   world.setEdgesFriction(3.5); //edge friction as stated, but to be honest, hard to distinguish even "higher values" like 5.5 and example value of 0.5, sometimes if you "really grind" then maybe
   
   //other test virtual object initialization
-  testCircleA = new FCircle(1.5); //sets diameter in real world cm
+  /*testCircleA = new FCircle(1.5); //sets diameter in real world cm
   //testCircleA.setPosition((1462/2), (914/2)); //set this circle in the "centre" of screen window (half point of width, height res) but also causes "jerky" movement due to object being off screen?
   testCircleA.setPosition(8, 2); //is based on CM not pixel positions, if you mess up and it "falls" out of world edges, then movement can be jerky
   testCircleA.setDensity(2); //or value of 0 is also "static", for mass
   testCircleA.setStatic(true); //static body means no physics on this object? Means it won't move, but you can still feel the edge of it, this is our "hanging point" so it should be static
   testCircleA.setFill(255,0,0); //rgb values for red
   //testCircleA.setDrawable(false); //actually still renders haptically, but no longer visible ... just invisible
-  world.add(testCircleA); //add this red circle to the world
+  world.add(testCircleA); //add this red circle to the world*/
+  
+  //trying more "flatter" anchor point as a FBox
+  testBoxA = new FBox(2,1);
+  testBoxA.setPosition(8,2);
+  testBoxA.setDensity(2);
+  testBoxA.setStatic(true);
+  testBoxA.setFill(255,0,0);
+  world.add(testBoxA);
   
   //seems like you need "steps" in btw joints to make it more spring like, let's test that idea out
   //one "middle" guy graphic
-  FCircle midCircle = new FCircle(1.5); //sets diameter in real world cm
+  /*FCircle midCircle = new FCircle(1.5); //sets diameter in real world cm
   midCircle.setDensity(2); //or value of 0 is also "static", for mass
   midCircle.setPosition(8,5); //pretty much halfway on the window screen, but in the "middle" btw the red and blue circles
   midCircle.setFill(0,255,0); //green in rgb
   //midCircle.setDrawable(false);
-  world.add(midCircle); //add this green circle to the world
+  world.add(midCircle); //add this green circle to the world*/
+  
+  //trying a midpoint in box form
+  FBox midBox = new FBox(2,1);
+  midBox.setDensity(2);
+  midBox.setPosition(8,5);
+  midBox.setFill(0,255,0);
+  world.add(midBox);
   
   //adding second virtual object for the "wrecking ball" for test Circle A (testing FDistanceJoint)
-  testCircleB = new FCircle(1.5); //sets diameter in real world cm
+  /*testCircleB = new FCircle(1.5); //sets diameter in real world cm
   testCircleB.setPosition(8,7); //is based on CM not pixel positions, if you mess up and it "falls" out of world edges, then movement can be jerky
   testCircleB.setDensity(8); //or value of 0 is also "static", for mass
   //testCircleB.setStatic(true); //was testing to see if this "hanging" blue ball could still move around, or prevent "snapping" when adding a joint to it
   testCircleB.setFill(0,0,255); //blue in rgb
   //testCircleB.setDrawable(false);
-  world.add(testCircleB); //add this blue circle to the world
+  world.add(testCircleB); //add this blue circle to the world*/
   
-  //FDistanceJoint testing - IN-PROGRESS
-  FDistanceJoint jointAtoMid = new FDistanceJoint(testCircleA, midCircle); //sets up a joint between these virtual objects, auto sets anchor of joints to centre of bodies
+  //trying box version of testCircleB
+  testBoxB = new FBox(2,1);
+  testBoxB.setPosition(8,7);
+  testBoxB.setDensity(8);
+  testBoxB.setFill(0,0,255);
+  world.add(testBoxB); 
+ 
+  //FDistanceJoint testing 
+  /*FDistanceJoint jointAtoMid = new FDistanceJoint(testCircleA, midCircle); //sets up a joint between these virtual objects, auto sets anchor of joints to centre of bodies
   jointAtoMid.setFrequency(10); //controls "bounce", 100 was the default but was way too much -> might be diff when using more than one joint
   jointAtoMid.setDamping(2); //"slow down" rate
   //println("Starting Anchor 1 Coordinates: " + jointAtoMid.getAnchor1X() + "," + jointAtoMid.getAnchor1Y());
   //println("Starting Anchor 2 Coordinates: " + jointAtoMid.getAnchor2X() + "," + jointAtoMid.getAnchor2Y());
   //jointAtoMid.setLength(4); //set defined distance in theory btw joint bodies
   jointAtoMid.calculateLength(); //sets the current distance btw joints, for "spring stretch" perhaps?
-  world.add(jointAtoMid); //add this first joint to the world
+  world.add(jointAtoMid); //add this first joint to the world*/
   
-  FDistanceJoint jointMidtoB = new FDistanceJoint (midCircle, testCircleB); //sets up a joint between these virtual objects, auto sets anchor of joints to centre of bodies
+  //FBox joint
+  FDistanceJoint jointAtoMid = new FDistanceJoint(testBoxA, midBox);
+  jointAtoMid.setFrequency(10);
+  jointAtoMid.setDamping(2);
+  jointAtoMid.calculateLength();
+   world.add(jointAtoMid);
+  
+  /*FDistanceJoint jointMidtoB = new FDistanceJoint (midCircle, testCircleB); //sets up a joint between these virtual objects, auto sets anchor of joints to centre of bodies
   jointMidtoB.setFrequency(10); //controls "bounce", 100 was the default but was way too much -> might be diff when using more than one joint
   jointMidtoB.setDamping(2); //"slow down" rate
   jointMidtoB.calculateLength(); //sets the current distance btw joints, for "spring stretch" perhaps?
   //jointMidtoB.setLength(4); //set defined distance in theory btw joint bodies, but doesn't seem to work since joints tend to "snap" towards each other
-  world.add(jointMidtoB); //add this second joint to the world
+  world.add(jointMidtoB); //add this second joint to the world*/
+  
+  //FBox joint
+  FDistanceJoint jointMidtoB = new FDistanceJoint (midBox, testBoxB);
+  jointMidtoB.setFrequency(10);
+  jointMidtoB.setDamping(2);
+  jointMidtoB.calculateLength();
+  world.add(jointMidtoB); 
   
   //avatar anchored to spring simple example
-  jointBtoAvatar = new FDistanceJoint(testCircleB,avatarHaptics.h_avatar); //make a joint between the blue circle (end of spring) and our avatar
+  /*jointBtoAvatar = new FDistanceJoint(testCircleB,avatarHaptics.h_avatar); //make a joint between the blue circle (end of spring) and our avatar
   jointBtoAvatar.setFrequency(7); //or maybe this value to prevent jerkiness, but more about "weight"
   jointBtoAvatar.setDamping(8); //play around here to try to prevent jerky on contact with blue circle, higher seems safer, "rate of return"
   jointBtoAvatar.calculateLength(); //sets the current distance btw joints, for "spring stretch" perhaps?
   //jointBtoAvatar.setLength(6);
-  //world.add(jointBtoAvatar); //add this joint btw the avatar and the blue circle to the world
+  //world.add(jointBtoAvatar); //add this joint btw the avatar and the blue circle to the world*/
+  
+  //FBox joint
+  jointBtoAvatar = new FDistanceJoint(testBoxB,avatarHaptics.h_avatar);
+  jointBtoAvatar.setFrequency(7);
+  jointBtoAvatar.setDamping(8);
+  jointBtoAvatar.calculateLength();
   
   //for button toggling
   grabMode = false;
@@ -178,12 +229,18 @@ void setup() { //one time setup for initial parameters
   spring = loadImage("../img/spring.png");
   //you need the "distance" that the spring should be to "cover" the joint circle objects we have, eg. from testCircleA (start) to testCircleB
   //FDistanceJoint distJoint = new FDistanceJoint (testCircleA, testCircleB);
-  circleAParamY = testCircleA.getY();
-  circleAParamY = testCircleA.getY();
-  circleBParamX = testCircleB.getX();
-  circleBParamY = testCircleB.getY();
-  springLength = circleBParamY - circleAParamY;
-  springWidth =  1.5; //size of circle 
+  //circleAParamY = testCircleA.getY();
+  //circleAParamY = testCircleA.getY();
+  //circleBParamX = testCircleB.getX();
+  //circleBParamY = testCircleB.getY();
+  boxAParamX = testBoxA.getX();
+  boxAParamY = testBoxA.getY();
+  boxBParamX = testBoxB.getX();
+  boxBParamY = testBoxB.getY();
+  //springLength = circleBParamY - circleAParamY;
+  springLength = boxBParamY - boxAParamY;
+  //springWidth =  1.5; //size of circle 
+  springWidth = 1; //size of box
   springLengthWorld = hAPI_Fisica.worldToScreen(springLength); 
   springWidthWorld = hAPI_Fisica.worldToScreen(springWidth); 
   //spring.resize((int)springWidthWorld, (int)springLengthWorld); //resize is in pixels NOT cm
@@ -219,8 +276,10 @@ void draw() {
   background(255); //used to "flush" past graphics on update, otherwise you get "inception" effect!
   
   //get current status of whether avatar and blue circle (end of spring) are "touching" or not
-  isTouching = avatarHaptics.h_avatar.isTouchingBody(testCircleB); //sometimes throws a concurrent modification exception
-  println("Is avatar touching blue circle?: " + isTouching);
+  //isTouching = avatarHaptics.h_avatar.isTouchingBody(testCircleB); //sometimes throws a concurrent modification exception
+  isTouching = avatarHaptics.h_avatar.isTouchingBody(testBoxB); 
+  //println("Is avatar touching blue circle?: " + isTouching);
+  println("Is avatar touching blue box?: " + isTouching);
   //println(frameRate); //show current framerate, but for some reason, seems to prevent keypress detection? 
   //debugging vibration bug
   //println("Current damping setting: " + avatarHaptics.getVirtualCouplingDamping());
@@ -236,16 +295,33 @@ void draw() {
   println("springLength is currently: " + springLength);*/
   
   //try "deforming" spring graphic here
-  circleBParamY = testCircleB.getY();
-  circleAParamY = testCircleA.getY();
-  springLength = circleBParamY - circleAParamY;
-  springLengthWorld = hAPI_Fisica.worldToScreen(springLength); 
-  springWidthWorld = hAPI_Fisica.worldToScreen(springWidth); 
-  println("Current springWidth and springLength are: " + (int)springWidth + " , " + (int)springLength);
+  //circleBParamY = testCircleB.getY();
+  //circleAParamY = testCircleA.getY();
+  
+  //only if grab mode is true
+  if(grabMode == true){
+    hapticAvatarY = avatarHaptics.h_avatar.getY(); //actually get haptic avatar's y position
+    boxAParamY = testBoxA.getY();
+    springLength = hapticAvatarY - boxAParamY;
+    springLengthWorld = hAPI_Fisica.worldToScreen(springLength); 
+    springWidthWorld = hAPI_Fisica.worldToScreen(springWidth); 
+  }
+  
+    println("Current springWidth and springLength are: " + (int)springWidth + " , " + (int)springLength);
+    image(spring, 1097, 100, springWidthWorld, springLengthWorld); 
+  
+  //springLength = circleBParamY - circleAParamY;
+   
+  
+  
   //springHolder.setDrawable(true);
   //springHolder.attachImage(spring);
+  
+  
+  
   //spring.resize((int)springWidthWorld, (int)springLengthWorld); //resize is in pixels NOT cm*/ //aparently blurry b/c resize() is cumulative, so will blur after a few iterations of draw loop
-  image(spring, 1097, 100, springWidthWorld, springLengthWorld); //for now, set in x,y pixel coordinates, roughly 3/4 of the window in for now
+  //for now, set in x,y pixel coordinates, roughly 3/4 of the window in for now
+  //image(spring, hAPI_Fisica.worldToScreen(8) - 50, hAPI_Fisica.worldToScreen(2) - 50, springWidthWorld, springLengthWorld); 
    
   if(!rendering_force){ //why would we need this? Seems safe without it
     
