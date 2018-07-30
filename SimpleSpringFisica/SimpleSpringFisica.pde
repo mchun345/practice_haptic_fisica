@@ -1,7 +1,7 @@
 /*** //<>//
 Matthew Chun
 Practicing how to make a spring using Fisica (In-Progress)
-Current status: Adding spring graphic that deforms accordingly.
+Current status: Added graphics that deforms accordingly but NOT for rotation ... code is getting messy too. 
 Made on original Haply (circa Summer 2017)
 Last modified: July 30, 2018
 ***/
@@ -60,10 +60,14 @@ FCircle testCircleA;
 
 //box graphics for testing
 FBox testBoxA; 
+FBox midBox;
 FBox testBoxB; 
 
+//joints for reference
+FDistanceJoint jointAtoMid; 
 //joint that can be toggled
 FDistanceJoint jointBtoAvatar;
+FDistanceJoint jointMidtoB;
 //for button toggling of avatar anchoring to the spring
 boolean grabMode; 
 boolean isTouching; //to check if avatar is touching the blue circle for potential "grabbing"
@@ -85,6 +89,9 @@ float boxBParamX;
 float boxBParamY;
 float hapticAvatarY;
 FBox springHolder;
+
+//booleans for toggling spring system graphics on/off
+boolean toggleSpringGraphics; 
 
 
 
@@ -136,11 +143,12 @@ void setup() { //one time setup for initial parameters
   world.add(testCircleA); //add this red circle to the world*/
   
   //trying more "flatter" anchor point as a FBox
-  testBoxA = new FBox(2,1);
+  testBoxA = new FBox(2,0.5);
   testBoxA.setPosition(8,2);
   testBoxA.setDensity(2);
   testBoxA.setStatic(true);
   testBoxA.setFill(255,0,0);
+  //testBoxA.setDrawable(false);
   world.add(testBoxA);
   
   //seems like you need "steps" in btw joints to make it more spring like, let's test that idea out
@@ -153,10 +161,11 @@ void setup() { //one time setup for initial parameters
   world.add(midCircle); //add this green circle to the world*/
   
   //trying a midpoint in box form
-  FBox midBox = new FBox(2,1);
+  midBox = new FBox(2,0.5);
   midBox.setDensity(2);
   midBox.setPosition(8,5);
   midBox.setFill(0,255,0);
+  //midBox.setDrawable(false);
   world.add(midBox);
   
   //adding second virtual object for the "wrecking ball" for test Circle A (testing FDistanceJoint)
@@ -169,10 +178,11 @@ void setup() { //one time setup for initial parameters
   world.add(testCircleB); //add this blue circle to the world*/
   
   //trying box version of testCircleB
-  testBoxB = new FBox(2,1);
+  testBoxB = new FBox(2,0.5);
   testBoxB.setPosition(8,7);
   testBoxB.setDensity(8);
   testBoxB.setFill(0,0,255);
+  //testBoxB.setDrawable(false);
   world.add(testBoxB); 
  
   //FDistanceJoint testing 
@@ -186,11 +196,12 @@ void setup() { //one time setup for initial parameters
   world.add(jointAtoMid); //add this first joint to the world*/
   
   //FBox joint
-  FDistanceJoint jointAtoMid = new FDistanceJoint(testBoxA, midBox);
+  jointAtoMid = new FDistanceJoint(testBoxA, midBox);
   jointAtoMid.setFrequency(10);
   jointAtoMid.setDamping(2);
   jointAtoMid.calculateLength();
-   world.add(jointAtoMid);
+  jointAtoMid.setDrawable(false);
+  world.add(jointAtoMid);
   
   /*FDistanceJoint jointMidtoB = new FDistanceJoint (midCircle, testCircleB); //sets up a joint between these virtual objects, auto sets anchor of joints to centre of bodies
   jointMidtoB.setFrequency(10); //controls "bounce", 100 was the default but was way too much -> might be diff when using more than one joint
@@ -200,10 +211,13 @@ void setup() { //one time setup for initial parameters
   world.add(jointMidtoB); //add this second joint to the world*/
   
   //FBox joint
-  FDistanceJoint jointMidtoB = new FDistanceJoint (midBox, testBoxB);
+  //FDistanceJoint jointMidtoB = new FDistanceJoint (midBox, testBoxB);
+  jointMidtoB = new FDistanceJoint (midBox, testBoxB); 
+  //jointMidtoB.setAnchor2(testBoxB.getWidth(), testBoxB.getHeight()/2); //trying to set anchor to bottom of testBoxB
   jointMidtoB.setFrequency(10);
   jointMidtoB.setDamping(2);
   jointMidtoB.calculateLength();
+  jointMidtoB.setDrawable(false);
   world.add(jointMidtoB); 
   
   //avatar anchored to spring simple example
@@ -219,6 +233,7 @@ void setup() { //one time setup for initial parameters
   jointBtoAvatar.setFrequency(7);
   jointBtoAvatar.setDamping(8);
   jointBtoAvatar.calculateLength();
+  jointBtoAvatar.setDrawable(false);
   
   //for button toggling
   grabMode = false;
@@ -263,6 +278,7 @@ void setup() { //one time setup for initial parameters
   float circleBParamY = testCircleB.getY();
   println("Circle B coordinates: " + circleBParamX + " , " + circleBParamY);*/
   
+  toggleSpringGraphics = true; 
 
   
   //start graphics and haptics sim loops
@@ -274,6 +290,27 @@ void setup() { //one time setup for initial parameters
 
 void draw() {
   background(255); //used to "flush" past graphics on update, otherwise you get "inception" effect!
+  
+  //if spring graphics toggle is off
+  if(toggleSpringGraphics == false){
+    testBoxA.setDrawable(false);
+    midBox.setDrawable(false);
+    testBoxB.setDrawable(false);
+    
+    jointAtoMid.setDrawable(false);
+    jointMidtoB.setDrawable(false);
+    jointBtoAvatar.setDrawable(false);
+  }else{
+  
+    testBoxA.setDrawable(true);
+    midBox.setDrawable(true);
+    testBoxB.setDrawable(true);
+    
+    jointAtoMid.setDrawable(true);
+    jointMidtoB.setDrawable(true);
+    jointBtoAvatar.setDrawable(true);
+  
+  }
   
   //get current status of whether avatar and blue circle (end of spring) are "touching" or not
   //isTouching = avatarHaptics.h_avatar.isTouchingBody(testCircleB); //sometimes throws a concurrent modification exception
@@ -300,15 +337,31 @@ void draw() {
   
   //only if grab mode is true
   if(grabMode == true){
+    //println("Current springWidth and springLength are: " + (int)springWidth + " , " + (int)springLength);
+    //println("Current anchor for hanging point is: " + hAPI_Fisica.worldToScreen(jointAtoMid.getAnchor1X()));
     hapticAvatarY = avatarHaptics.h_avatar.getY(); //actually get haptic avatar's y position
     boxAParamY = testBoxA.getY();
     springLength = hapticAvatarY - boxAParamY;
     springLengthWorld = hAPI_Fisica.worldToScreen(springLength); 
     springWidthWorld = hAPI_Fisica.worldToScreen(springWidth); 
+    image(spring, hAPI_Fisica.worldToScreen(jointAtoMid.getAnchor1X()) - (springWidthWorld/2) , hAPI_Fisica.worldToScreen(jointAtoMid.getAnchor1Y()), springWidthWorld, springLengthWorld);
+  }else{
+    //println("Current springWidth and springLength are: " + (int)springWidth + " , " + (int)springLength);
+    //println("Current anchor for hanging point is: " + hAPI_Fisica.worldToScreen(jointAtoMid.getAnchor1X()));
+    boxBParamY = testBoxB.getY();
+    boxAParamY = testBoxA.getY();
+    springLength = boxBParamY - boxAParamY; 
+    springLengthWorld = hAPI_Fisica.worldToScreen(springLength); 
+    springWidthWorld = hAPI_Fisica.worldToScreen(springWidth); 
+    image(spring, hAPI_Fisica.worldToScreen(jointAtoMid.getAnchor1X()) - (springWidthWorld/2) , hAPI_Fisica.worldToScreen(jointAtoMid.getAnchor1Y()), springWidthWorld, springLengthWorld);
   }
   
-    println("Current springWidth and springLength are: " + (int)springWidth + " , " + (int)springLength);
-    image(spring, 1097, 100, springWidthWorld, springLengthWorld); 
+    //println("Current springWidth and springLength are: " + (int)springWidth + " , " + (int)springLength);
+    //println("Current anchor for hanging point is: " + hAPI_Fisica.worldToScreen(jointAtoMid.getAnchor1X()));
+    //println("Current anchor points: " + jointAtoMid.getAnchor1X() + " , " + jointAtoMid.getAnchor1Y()); //in cm
+    //image(spring, 1097, 100, springWidthWorld, springLengthWorld); 
+    
+    
   
   //springLength = circleBParamY - circleAParamY;
    
@@ -346,6 +399,14 @@ void keyPressed(){
       world.remove(jointBtoAvatar);
       println("Grab mode curently OFF");
       grabMode = false;
+    }
+  }
+  if(key == 't' || key == 'T'){
+    println("T was pressed");
+    if(toggleSpringGraphics == false){
+      toggleSpringGraphics = true;
+    }else{
+      toggleSpringGraphics = false; 
     }
   }
 }
