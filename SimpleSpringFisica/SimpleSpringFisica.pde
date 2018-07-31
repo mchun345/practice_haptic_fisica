@@ -1,9 +1,9 @@
 /*** //<>//
 Matthew Chun
 Practicing how to make a spring using Fisica (In-Progress)
-Current status: Added graphics that deforms accordingly but NOT for rotation ... code is getting messy too. 
+Current status: Trying to deal with rotation, and set rotation of spring graphic accordingly
 Made on original Haply (circa Summer 2017)
-Last modified: July 30, 2018
+Last modified: July 31, 2018
 ***/
 
 
@@ -93,7 +93,10 @@ FBox springHolder;
 //booleans for toggling spring system graphics on/off
 boolean toggleSpringGraphics; 
 
-
+//for calculating angular displacement for doing proper spring graphic rotation
+PVector originLine; //vector to represent the initial "netural" origin point
+PVector displacementLine; //vector to represent the displaced line to calculate a displacement angular rotation from
+PVector avatarOriginLine; //vector to represent the displaced line that "follows" current avatar
 
 void setup() { //one time setup for initial parameters
   
@@ -279,7 +282,12 @@ void setup() { //one time setup for initial parameters
   println("Circle B coordinates: " + circleBParamX + " , " + circleBParamY);*/
   
   toggleSpringGraphics = true; 
-
+  
+  //for testing rotation of spring
+  //originLine = new PVector(hAPI_Fisica.worldToScreen(jointAtoMid.getAnchor1X()), hAPI_Fisica.worldToScreen(jointAtoMid.getAnchor1Y())); //should be at "centre", where anchor point of testBoxA object is situated
+  originLine = new PVector(731,0);
+  //now avatar tracking line
+  avatarOriginLine = new PVector(731,0); //has to be the same as the originLine initial point
   
   //start graphics and haptics sim loops
   world.draw(); //render the world and initialized objects defined above on the screen
@@ -290,6 +298,21 @@ void setup() { //one time setup for initial parameters
 
 void draw() {
   background(255); //used to "flush" past graphics on update, otherwise you get "inception" effect!
+  
+  //rotation tracking
+  PVector endOriginLine = new PVector(731, 914);
+  stroke(color(255,0,0)); //for visual debugging
+  line(originLine.x, originLine.y, endOriginLine.x, endOriginLine.y);
+  PVector endAvatarLine = new PVector(hAPI_Fisica.worldToScreen(avatarHaptics.h_avatar.getX()), hAPI_Fisica.worldToScreen(avatarHaptics.h_avatar.getY()));
+  //println("endAvatarLine coordinates: " + endAvatarLine);
+  stroke(color(0,0,255)); //for visual debugging
+  line(avatarOriginLine.x, avatarOriginLine.y, endAvatarLine.x, endAvatarLine.y);
+  float angleBtw = PVector.angleBetween(originLine, endAvatarLine);
+  println("Radian Angle between avatar and origin line is: " + angleBtw);
+  float angleRotation = atan2(endAvatarLine.y, endAvatarLine.x); //ostensibly similar to angleBetween function
+  println("Avatar rotation is: " + angleRotation);
+  println("-45 degrees in radians: " + radians(-45));
+  
   
   //if spring graphics toggle is off
   if(toggleSpringGraphics == false){
@@ -316,10 +339,14 @@ void draw() {
   //isTouching = avatarHaptics.h_avatar.isTouchingBody(testCircleB); //sometimes throws a concurrent modification exception
   isTouching = avatarHaptics.h_avatar.isTouchingBody(testBoxB); 
   //println("Is avatar touching blue circle?: " + isTouching);
-  println("Is avatar touching blue box?: " + isTouching);
+  //println("Is avatar touching blue box?: " + isTouching);
   //println(frameRate); //show current framerate, but for some reason, seems to prevent keypress detection? 
   //debugging vibration bug
   //println("Current damping setting: " + avatarHaptics.getVirtualCouplingDamping());
+  
+  //testing rotation stuff
+  //float currentRotation = avatarHaptics.h_avatar.getRotation();
+  //println("Current rotation of avatar is in radian angles: " + currentRotation);
   
   
   /*float circleAParamX = testCircleA.getX(); 
@@ -338,22 +365,39 @@ void draw() {
   //only if grab mode is true
   if(grabMode == true){
     //println("Current springWidth and springLength are: " + (int)springWidth + " , " + (int)springLength);
-    //println("Current anchor for hanging point is: " + hAPI_Fisica.worldToScreen(jointAtoMid.getAnchor1X()));
+    //println("Current anchor for hanging point is: " + hAPI_Fisica.worldToScreen(jointAtoMid.getAnchor1X()) + " , " + hAPI_Fisica.worldToScreen(jointAtoMid.getAnchor1Y()));
     hapticAvatarY = avatarHaptics.h_avatar.getY(); //actually get haptic avatar's y position
     boxAParamY = testBoxA.getY();
     springLength = hapticAvatarY - boxAParamY;
     springLengthWorld = hAPI_Fisica.worldToScreen(springLength); 
-    springWidthWorld = hAPI_Fisica.worldToScreen(springWidth); 
-    image(spring, hAPI_Fisica.worldToScreen(jointAtoMid.getAnchor1X()) - (springWidthWorld/2) , hAPI_Fisica.worldToScreen(jointAtoMid.getAnchor1Y()), springWidthWorld, springLengthWorld);
+    springWidthWorld = hAPI_Fisica.worldToScreen(springWidth);
+    //image(spring, hAPI_Fisica.worldToScreen(jointAtoMid.getAnchor1X()) - (springWidthWorld/2) , hAPI_Fisica.worldToScreen(jointAtoMid.getAnchor1Y()), springWidthWorld, springLengthWorld);
+    pushMatrix();
+    //imageMode(CENTER);
+    //translate(500,-500);
+    translate(hAPI_Fisica.worldToScreen(jointAtoMid.getAnchor1X()) - (springWidthWorld/2), hAPI_Fisica.worldToScreen(jointAtoMid.getAnchor1Y())); //sets new "origin" point to set rotation from 
+    rotate(angleRotation - HALF_PI); //working ... but rotation should be on some sort of pivot
+    image(spring, 0, 0, springWidthWorld, springLengthWorld);
+    //rotate(currentRotation); //... rotates the world screen... how to hard specify it's the recent image???
+    popMatrix();
+    
+    
   }else{
-    //println("Current springWidth and springLength are: " + (int)springWidth + " , " + (int)springLength);
-    //println("Current anchor for hanging point is: " + hAPI_Fisica.worldToScreen(jointAtoMid.getAnchor1X()));
+    //println("Current springWidth and springLength are: " + (int)springWidth + " , " + (int)springLength); //<>//
+    //println("Current anchor for hanging point is: " + hAPI_Fisica.worldToScreen(jointAtoMid.getAnchor1X()) + " , " + hAPI_Fisica.worldToScreen(jointAtoMid.getAnchor1Y()));
     boxBParamY = testBoxB.getY();
     boxAParamY = testBoxA.getY();
     springLength = boxBParamY - boxAParamY; 
     springLengthWorld = hAPI_Fisica.worldToScreen(springLength); 
     springWidthWorld = hAPI_Fisica.worldToScreen(springWidth); 
-    image(spring, hAPI_Fisica.worldToScreen(jointAtoMid.getAnchor1X()) - (springWidthWorld/2) , hAPI_Fisica.worldToScreen(jointAtoMid.getAnchor1Y()), springWidthWorld, springLengthWorld);
+    //image(spring, hAPI_Fisica.worldToScreen(jointAtoMid.getAnchor1X()) - (springWidthWorld/2) , hAPI_Fisica.worldToScreen(jointAtoMid.getAnchor1Y()), springWidthWorld, springLengthWorld);
+    pushMatrix();
+    //imageMode(CENTER);
+    translate(hAPI_Fisica.worldToScreen(jointAtoMid.getAnchor1X()) - (springWidthWorld/2), hAPI_Fisica.worldToScreen(jointAtoMid.getAnchor1Y())); //positive is right, negative for y is "up"
+    rotate(angleRotation - HALF_PI); //working ... but rotation should be on some sort of pivot
+    image(spring, 0, 0, springWidthWorld, springLengthWorld);
+    //rotate(currentRotation); //... rotates the world screen... how to hard specify it's the recent image???
+    popMatrix();
   }
   
     //println("Current springWidth and springLength are: " + (int)springWidth + " , " + (int)springLength);
